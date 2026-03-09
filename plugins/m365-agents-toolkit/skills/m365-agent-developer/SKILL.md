@@ -29,7 +29,7 @@ description: >
 | Non-agent project files, no `appPackage/` | **Reject** | Text-only response. No files, no commands. |
 | No manifest, user wants to edit/deploy | **Reject** | Text-only response. Explain manifest is missing. |
 | No manifest, user wants new project | **Scaffold** | → [Scaffolding Workflow](references/scaffolding-workflow.md) |
-| Manifest exists with errors | **Fix** | Run `atk validate --env dev`, report errors, ask user. Do NOT deploy. |
+| Manifest exists with errors | **Fix** | Run `atk validate --env local`, report errors, ask user. Do NOT deploy. |
 | Valid agent project | **Edit** | → [Editing Workflow](references/editing-workflow.md) |
 
 > **Detailed gate rules, examples, and anti-patterns:** [Workspace Gates](references/workspace-gates.md)
@@ -63,14 +63,14 @@ All commands use `atk` directly (e.g., `atk provision --env local`).
 After ANY change to files in `appPackage/`, you MUST run both steps before responding:
 
 ```bash
-# Step 1: Validate (REQUIRED — use --env dev, never --env local)
-atk validate --env dev
+# Step 1: Validate (REQUIRED — always use --env local for validation)
+atk validate --env local
 
 # Step 2: Deploy (REQUIRED — skip ONLY if validation found errors)
 atk provision --env local
 ```
 
-- Only `atk validate` counts — no other validation method is acceptable
+- Only `atk validate --env local` counts — no other validation method is acceptable
 - If validation finds errors → **STOP. Fix errors. Re-validate. Do NOT deploy.**
 - Warnings are OK — they don't block deployment
 - Exception: user explicitly asks you not to deploy → validate only
@@ -78,7 +78,7 @@ atk provision --env local
 ### 2. Never Invent Content
 
 - Do NOT invent placeholder names, descriptions, or instructions
-- If required fields are missing, run `atk validate`, report the gaps, and ASK the user
+- If required fields are missing, run `atk validate --env local`, report the gaps, and ASK the user
 - If JSON is malformed, identify the specific issues, ask before fixing, use surgical edits
 
 ### 3. Schema Version Compatibility
@@ -96,10 +96,11 @@ Key version gates:
 You are **forbidden** from manually creating `ai-plugin.json`, OpenAPI specs, adaptive cards, or editing the `actions` array. Use the CLI:
 
 ```bash
-atk add action --api-plugin-type api-spec --openapi-spec-location URL --api-operation "GET /path" -i false
+# ⛔ Always list ALL operations in a single call — NEVER run separate calls per operation
+atk add action --api-plugin-type api-spec --openapi-spec-location URL --api-operation "GET /path,POST /path,PATCH /path/{id},DELETE /path/{id}" -i false
 ```
 
-Run once per operation. One plugin per API — consolidate operations from the same spec. If `atk add action` fails, report the error; do NOT fall back to manual creation.
+Run a **single** `atk add action` call per OpenAPI spec, listing **all** operations as a comma-separated list in `--api-operation`. Never run separate `atk add action` calls for different operations from the same spec — this creates multiple plugins instead of one. If `atk add action` fails, report the error; do NOT fall back to manual creation.
 
 > **Exception:** MCP servers are not supported by `atk add action`. Use the [MCP Plugin workflow](references/mcp-plugin.md) instead.
 

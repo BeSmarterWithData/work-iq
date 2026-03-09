@@ -12,7 +12,7 @@ Validate manifest files using the ATK CLI:
 
 ```bash
 # Validate manifest with ATK CLI (the ONLY supported validation method)
-atk validate --env dev
+atk validate --env local
 ```
 
 **Use case:** Local validation of manifest schema and required fields before deployment.

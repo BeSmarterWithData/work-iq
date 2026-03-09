@@ -21,10 +21,10 @@ For full property details, examples, and JSON structures, refer to the linked Gi
 
 | Version | JSON Schema | Documentation |
 |---------|-------------|---------------|
-| **v2.4** | [schema.json](https://aka.ms/json-schemas/copilot/plugin/v2.4/schema.json) | [api-plugin-manifest-2.4.md](https://raw.githubusercontent.com/MicrosoftDocs/m365copilot-docs/main/docs/api-plugin-manifest-2.4.md) |
-| v2.3 | [schema.json](https://aka.ms/json-schemas/copilot/plugin/v2.3/schema.json) | [api-plugin-manifest-2.3.md](https://raw.githubusercontent.com/MicrosoftDocs/m365copilot-docs/main/docs/api-plugin-manifest-2.3.md) |
-| v2.2 | [schema.json](https://aka.ms/json-schemas/copilot/plugin/v2.2/schema.json) | [api-plugin-manifest-2.2.md](https://raw.githubusercontent.com/MicrosoftDocs/m365copilot-docs/main/docs/api-plugin-manifest-2.2.md) |
-| v2.1 | [schema.json](https://aka.ms/json-schemas/copilot/plugin/v2.1/schema.json) | [api-plugin-manifest-2.1.md](https://raw.githubusercontent.com/MicrosoftDocs/m365copilot-docs/main/docs/api-plugin-manifest-2.1.md) |
+| **v2.4** | [schema.json](https://aka.ms/json-schemas/copilot/plugin/v2.4/schema.json) | [plugin-manifest-2.4.md](https://raw.githubusercontent.com/MicrosoftDocs/m365copilot-docs/main/docs/plugin-manifest-2.4.md) |
+| v2.3 | [schema.json](https://aka.ms/json-schemas/copilot/plugin/v2.3/schema.json) | [plugin-manifest-2.3.md](https://raw.githubusercontent.com/MicrosoftDocs/m365copilot-docs/main/docs/plugin-manifest-2.3.md) |
+| v2.2 | [schema.json](https://aka.ms/json-schemas/copilot/plugin/v2.2/schema.json) | [plugin-manifest-2.2.md](https://raw.githubusercontent.com/MicrosoftDocs/m365copilot-docs/main/docs/plugin-manifest-2.2.md) |
+| v2.1 | [schema.json](https://aka.ms/json-schemas/copilot/plugin/v2.1/schema.json) | [plugin-manifest-2.1.md](https://raw.githubusercontent.com/MicrosoftDocs/m365copilot-docs/main/docs/plugin-manifest-2.1.md) |
 
 ---
 

@@ -345,7 +345,7 @@ After deployment, ATK provides a test link:
 
 ### Validate Before Every Operation
 ```bash
-atk validate --env dev
+atk validate --env local
 ```
 
 **What validation checks:**
@@ -404,7 +404,7 @@ atk auth login m365
 - Re-run provision after version bump
 
 **"Validation failed":**
-- Run `atk validate --env dev` to see specific errors
+- Run `atk validate --env local` to see specific errors
 - Verify all required manifest fields
 - Ensure icons exist in `appPackage/`
 

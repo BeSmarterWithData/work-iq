@@ -35,23 +35,22 @@ When making ANY edits to an agent — including instructions, conversation start
 
 ## 🛡️ VALIDATION GATE — MANDATORY BEFORE EVERY DEPLOY 🛡️
 
-**Every file you create or edit** in the `appPackage/` folder MUST be validated before deployment.
+After editing any files in the `appPackage/` folder, you MUST validate before deployment.
 
-**How to validate:** After editing any agent file, run the validation command for each file using the project-relative path:
+**How to validate:** Run the validation command once — it validates the entire project:
 
 ```bash
-atk validate --env dev
-atk validate --env dev
+atk validate --env local
 ```
 
 **Rules:**
 - 🚫 **ERRORS = HARD BLOCK.** If validation reports any **errors**, you MUST fix them before running `atk provision`. **DO NOT DEPLOY WITH ERRORS. EVER.**
 - ⚠️ **Warnings are OK.** Warnings do not block deployment but should be reviewed and addressed when reasonable.
-- ✅ **Validate after every change.** Run `atk validate --env dev` after making changes.
-- 🚫 **`--env dev` is mandatory** for validation. Never use `--env local` for validation.
+- ✅ **Validate after every change.** Run `atk validate --env local` after making changes.
+- 🚫 **`--env local` is mandatory** for validation. Never use `--env dev` for validation.
 - 🚫 **If validation fails, report the error.** Do NOT use any manual JSON parsing as a substitute.
 
-**Decision tree after running `atk validate`:**
+**Decision tree after running `atk validate --env local`:**
 1. **ERRORS found** → STOP. Fix all errors. Re-validate. DO NOT run `atk provision`.
 2. **Only WARNINGS** → Proceed to `atk provision --env local`.
 3. **Clean (no errors, no warnings)** → Proceed to `atk provision --env local`.
@@ -123,19 +122,19 @@ When you add, remove, or modify ANY capability or plugin, you MUST complete ALL 
 
 **After EACH edit action above, immediately run:**
 ```bash
-atk validate --env dev
+atk validate --env local
 ```
 **After ALL edits + validations pass, immediately run:**
 ```bash
 atk provision --env local
 ```
-These two commands are part of the edit — not a separate optional step. If you edited `declarativeAgent.json`, you MUST run `atk validate --env dev`. If you edited `instruction.txt`, you MUST run `atk validate --env dev`. Then deploy. Editing without validating and deploying is like writing code without saving the file — the work is not done.
+These two commands are part of the edit — not a separate optional step. If you edited `declarativeAgent.json`, you MUST run `atk validate --env local`. If you edited `instruction.txt`, you MUST run `atk validate --env local`. Then deploy. Editing without validating and deploying is like writing code without saving the file — the work is not done.
 
-**⛔ API Plugin Rule — HARD RULE, NO EXCEPTIONS:** To add an API plugin, you MUST use `atk add action` — one command per operation. You are FORBIDDEN from manually creating `ai-plugin.json`, OpenAPI spec files, adaptive card files, or manually editing the `actions` array. This applies whether you are scaffolding a new project OR editing an existing one. If the workspace already has an agent and the user says "add an API plugin", you STILL must use `atk add action`. If `atk add action` fails, report the error — do NOT fall back to manual file creation. **Manual plugin file creation = automatic eval failure.**
+**⛔ API Plugin Rule — HARD RULE, NO EXCEPTIONS:** To add an API plugin, you MUST use `atk add action` — one command per OpenAPI spec with **ALL operations included in a single call**. Never run separate `atk add action` calls for different operations from the same spec — this creates multiple plugins instead of one. You are FORBIDDEN from manually creating `ai-plugin.json`, OpenAPI spec files, adaptive card files, or manually editing the `actions` array. This applies whether you are scaffolding a new project OR editing an existing one. If the workspace already has an agent and the user says "add an API plugin", you STILL must use `atk add action`. If `atk add action` fails, report the error — do NOT fall back to manual file creation. **Manual plugin file creation = automatic eval failure.**
 
 ```bash
-# ✅ The ONLY way to add an API plugin — even in existing projects:
-atk add action --api-plugin-type api-spec --openapi-spec-location <URL> --api-operation "GET /path" -i false
+# ✅ The ONLY way to add an API plugin — ALL operations in ONE call:
+atk add action --api-plugin-type api-spec --openapi-spec-location <URL> --api-operation "GET /path,POST /path,PATCH /path/{id},DELETE /path/{id}" -i false
 ```
 
 **After adding a plugin with `atk add action`, you MUST complete ALL of these — skipping any step is an eval failure:**
@@ -158,33 +157,30 @@ atk add action --api-plugin-type api-spec --openapi-spec-location <URL> --api-op
 **Reference:** [schema.md](schema.md) for proper manifest structure
 **Reference:** [api-plugins.md](api-plugins.md) for adaptive card enhancement guidelines after adding a plugin
 
-**⚠️ IMPORTANT:** After making any edits to JSON files, you MUST validate all changed files with `atk validate --env dev` (see Validation Gate above) and then deploy the agent (Step 4) before returning to the user.
+**⚠️ IMPORTANT:** After making any edits to JSON files, you MUST validate all changed files with `atk validate --env local` (see Validation Gate above) and then deploy the agent (Step 4) before returning to the user.
 
 **⛔ MANDATORY POST-EDIT CHECKPOINT — YOU ARE NOT DONE YET:**
 After editing ANY file in `appPackage/`, you MUST complete BOTH steps below before responding to the user. Skipping either one is an eval failure:
-1. **Validate** — Run `atk validate --env dev` for EVERY file you touched. No other validation method is acceptable. If it reports errors → fix them and re-validate. Do NOT proceed to step 2 with errors.
+1. **Validate** — Run `atk validate --env local` once (it validates the entire project). No other validation method is acceptable. If it reports errors → fix them and re-validate. Do NOT proceed to step 2 with errors.
 2. **Deploy** — Run `atk provision --env local`. If you edited files but did not run this command, your work is incomplete. The only exception is if validation found errors (then you MUST fix errors first) or the user explicitly asked you not to deploy.
 
 If you are about to respond to the user and you have NOT run both commands above, **STOP and run them now**.
 
 ### Step 3.5: Validate Edited Files
 
-**Action:** Before deploying, validate **every file you created or modified** using the CLI with the project-relative path:
+**Action:** Before deploying, run validation once — it covers the entire project:
 
 ```bash
-atk validate --env dev
-atk validate --env dev
+atk validate --env local
 ```
 
-- Run this command for each edited file
-- 🚫 **If any file has ERRORS → STOP. Fix all errors before proceeding to Step 4.**
+- 🚫 **If there are ERRORS → STOP. Fix all errors before proceeding to Step 4.**
 - ⚠️ Warnings are acceptable and do not block deployment
-- This applies to `declarativeAgent.json`, plugin manifests, adaptive cards, MCP tools files, and any other file in `appPackage/`
-- 🔧 **If `atk validate` crashes or returns no useful output:** Report the CLI failure to the user. Try `atk validate --env dev` as a fallback. Do NOT substitute any manual JSON parsing — it is never an acceptable replacement.
+- 🔧 **If `atk validate --env local` crashes or returns no useful output:** Report the CLI failure to the user. Do NOT substitute any manual JSON parsing — it is never an acceptable replacement.
 
 ### Step 4: Provision and Deploy
 
-**⛔ PRE-DEPLOY CHECK:** Before running the command below, ask yourself: "Did `atk validate` report ANY errors?" If yes → **DO NOT RUN `atk provision`.** Go back to Step 3.5, fix the errors, and re-validate. There are NO exceptions to this rule — not "to see what happens", not "to demonstrate the failure", not "to test if it would work anyway".
+**⛔ PRE-DEPLOY CHECK:** Before running the command below, ask yourself: "Did `atk validate --env local` report ANY errors?" If yes → **DO NOT RUN `atk provision`.** Go back to Step 3.5, fix the errors, and re-validate. There are NO exceptions to this rule — not "to see what happens", not "to demonstrate the failure", not "to test if it would work anyway".
 
 **Action:** Provision required Azure resources and register the agent:
 ```bash
@@ -238,7 +234,7 @@ atk share --scope tenant --env dev
 
 **RULE:** When making any changes to an agent (JSON manifest files, instructions, capabilities, API plugins), you MUST complete the following workflow before returning to the user:
 
-1. **Validate every touched file:** Run `atk validate --env dev` for each edited file (use the project-relative path).
+1. **Validate:** Run `atk validate --env local` once (validates the entire project).
    - If any file has **ERRORS** → **STOP. Fix all errors. Re-validate. DO NOT proceed to step 2.**
    - If only **warnings** → Proceed.
 2. Provision/deploy the agent: `atk provision --env local`
@@ -266,10 +262,10 @@ atk share --scope tenant --env dev
 
 **STOP.** Before writing your response to the user, verify ALL of the following:
 
-- [ ] I ran `atk validate --env dev` for **EVERY** file I created or edited
+- [ ] I ran `atk validate --env local` once after all edits
 - [ ] All validation passed with **no errors** (warnings are OK)
 - [ ] I ran `atk provision --env local` and it succeeded
-- [ ] I did NOT use any manual JSON parsing as a substitute for `atk validate`
+- [ ] I did NOT use any manual JSON parsing as a substitute for `atk validate --env local`
 
 **If you cannot check ALL four boxes, you are NOT done.** Go back and complete the missing steps.
 

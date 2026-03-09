@@ -46,7 +46,7 @@ atk --version 2>/dev/null
 ### Step 2: Install ATK CLI (only if missing or user asked to update)
 
 ```bash
-npm install -g @microsoft/m365agentstoolkit-cli@latest
+npm install -g @microsoft/m365agentstoolkit-cli@rc
 ```
 
 ### Step 3: ATK VS Code Extension (if requested)

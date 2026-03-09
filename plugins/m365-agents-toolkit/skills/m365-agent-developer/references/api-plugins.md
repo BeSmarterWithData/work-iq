@@ -20,7 +20,7 @@ After running `atk add action`, you **MUST** complete ALL of these before valida
 2. **Update `description_for_model`** in ai-plugin.json — detailed guidance for the AI on when and how to use each function
 3. **Customize adaptive cards** in `appPackage/adaptiveCards/` for each operation — different layouts per HTTP verb (list view for GET collections, detail view for GET by ID, confirmation for DELETE, etc.)
 4. **Add `confirmation` dialogs** for all destructive operations (POST, PUT, PATCH, DELETE)
-5. **Validate** all touched files with `atk validate --env dev`
+5. **Validate** all touched files with `atk validate --env local`
 6. **Deploy** with `atk provision --env local`
 
 Skipping ANY of these steps = incomplete work. The `atk add action` command generates scaffolding — **you must finish the job** by customizing every generated file.
@@ -30,6 +30,8 @@ Skipping ANY of these steps = incomplete work. The `atk add action` command gene
 ## Adding API Plugins with ATK CLI
 
 > **⚠️ IMPORTANT:** When adding an API, OpenAPI spec, or REST API to your agent, you **MUST** use the `atk add action` command. This is the required method for adding API plugins to M365 Copilot agents. **Do NOT manually create plugin files** - the path resolution between local packaging and M365 service validation is complex and error-prone.
+
+> **⛔ ONE PLUGIN PER API — HARD RULE:** Always add ALL operations from the same OpenAPI spec in a **single** `atk add action` call. List every operation in the `--api-operation` parameter as a comma-separated list. **NEVER** run separate `atk add action` calls for different operations from the same spec — this creates multiple plugins instead of one unified plugin. One OpenAPI spec = one `atk add action` call = one plugin.
 
 ### The `atk add action` Command
 
@@ -1181,7 +1183,7 @@ These different resolution strategies make manual path configuration nearly impo
 
 ## Related Documentation
 
-- [API Plugin Manifest Schema v2.4](https://raw.githubusercontent.com/MicrosoftDocs/m365copilot-docs/refs/heads/main/docs/api-plugin-manifest-2.4.md)
+- [Plugin Manifest Schema v2.4](https://raw.githubusercontent.com/MicrosoftDocs/m365copilot-docs/refs/heads/main/docs/plugin-manifest-2.4.md)
 - [OpenAPI Specification](https://www.openapis.org/what-is-openapi)
 - [Repairs API Example](https://repairshub.azurewebsites.net/openapi.json)
 - [JSON Schema Reference](schema.md)

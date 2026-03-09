@@ -53,21 +53,21 @@ User explicitly says "create a new agent", "scaffold", "start from scratch". The
 `declarativeAgent.json` exists but has validation errors.
 
 **Rules:**
-- Run `atk validate --env dev` to get the full error report
+- Run `atk validate --env local` to get the full error report
 - Report ALL errors to the user with specific details
 - ASK the user before making changes
 - **Do NOT** run `atk provision` — fix errors first, no exceptions
 - **Do NOT** silently rewrite the entire file — surgical fixes only
 - **Do NOT** invent placeholder values for missing required fields
 
-**Special case — mostly empty manifest** (has `$schema` and `version` but no `name`, `description`, or `instructions`): This is Gate 4. Run `atk validate`, report missing fields, ASK the user. Do NOT invent values.
+**Special case — mostly empty manifest** (has `$schema` and `version` but no `name`, `description`, or `instructions`): This is Gate 4. Run `atk validate --env local`, report missing fields, ASK the user. Do NOT invent values.
 
 **Malformed JSON handling:**
 1. TELL the user the file has malformed JSON
 2. IDENTIFY the specific syntax issues (missing commas, unclosed brackets, etc.)
 3. ASK the user if you should fix the syntax
 4. Fix with surgical edits (not a rewrite — if you're changing >20% of lines, stop and reconsider)
-5. Re-validate with `atk validate` after fixing
+5. Re-validate with `atk validate --env local` after fixing
 
 ### Gate 5: Valid Agent Project — Edit
 
@@ -81,8 +81,8 @@ User explicitly says "create a new agent", "scaffold", "start from scratch". The
 |----------|-------------|-----------------|---------------------|
 | Express/React/Node app | `package.json` + `src/index.js` but NO `appPackage/` | Text-only: tell user this is NOT an agent project | ❌ Create `appPackage/` ❌ Run `atk new` ❌ Create ANY files |
 | No manifest, edit request | No `declarativeAgent.json`, user says "add capability" | Text-only: explain manifest is missing | ❌ Create files ❌ Scaffold ❌ "Help" by creating missing files |
-| Manifest missing fields | `declarativeAgent.json` missing `name`/`description`/`instructions` | Run `atk validate`, list ALL missing fields, ASK user | ❌ Invent placeholders ❌ Auto-fill ❌ Run `atk provision` |
-| Manifest has errors | `atk validate` reports errors | Report ALL errors, suggest fixes, ask user | ❌ Silently fix ❌ Deploy ❌ Auto-correct |
+| Manifest missing fields | `declarativeAgent.json` missing `name`/`description`/`instructions` | Run `atk validate --env local`, list ALL missing fields, ASK user | ❌ Invent placeholders ❌ Auto-fill ❌ Run `atk provision` |
+| Manifest has errors | `atk validate --env local` reports errors | Report ALL errors, suggest fixes, ask user | ❌ Silently fix ❌ Deploy ❌ Auto-correct |
 
 ---
 
@@ -95,7 +95,7 @@ These will cause eval failure:
 - ❌ Auto-completing missing fields without asking
 - ❌ Running `atk provision` when validation found errors — not even "to test"
 - ❌ Deploying "for educational purposes" to show error output
-- ❌ Using any manual JSON parsing instead of `atk validate`
+- ❌ Using any manual JSON parsing instead of `atk validate --env local`
 
 **"EVEN IF..." — No exceptions to the deploy block:**
 - EVEN IF deploying would "demonstrate the error" — just report errors

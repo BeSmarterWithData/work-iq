@@ -2,18 +2,11 @@
 
 This guide explains how to integrate Model Context Protocol (MCP) servers as actions in your Microsoft 365 Copilot agent using JSON manifests.
 
-## ⚠️ CRITICAL: Two Files Required
-
-MCP plugin integration requires **TWO separate files**. Both are MANDATORY:
-
-1. **`{name}-plugin.json`** - The plugin manifest (references the tools file)
-2. **`{name}-mcp-tools.json`** - The MCP tools description file (generated from MCP server)
-
-🚨 **YOU MUST CREATE BOTH FILES.** The plugin will NOT work without the tools file.
+> **⛔ SINGLE FILE ONLY:** MCP plugins require exactly **ONE file** — the plugin manifest (`{name}-plugin.json`). Tool descriptions are inlined directly in the manifest's `mcp_tool_description.tools` array. **Do NOT create a separate `{name}-mcp-tools.json` file.** There is no `"file"` property — only `"tools": [...]`.
 
 ## Overview
 
-MCP servers expose tools that can be consumed by your agent. Unlike OpenAPI-based plugins, MCP plugins use a `RemoteMCPServer` runtime type and require a tools description file.
+MCP servers expose tools that can be consumed by your agent. Unlike OpenAPI-based plugins, MCP plugins use a `RemoteMCPServer` runtime type and embed the tool descriptions directly in the plugin manifest.
 
 > **⚠️ IMPORTANT:** `atk add action` does NOT support MCP servers — it only supports `--api-plugin-type api-spec` for OpenAPI plugins. MCP plugins MUST be created manually following the steps below. This is NOT a violation of the "Always Use `atk add action`" rule — that rule applies only to OpenAPI/REST API plugins.
 
@@ -30,26 +23,24 @@ MCP servers expose tools that can be consumed by your agent. Unlike OpenAPI-base
 
 Ask the user for the MCP server URL. Example: `https://learn.microsoft.com/api/mcp`
 
-### Step 2: Generate the MCP Tools File (MANDATORY)
+### Step 2: Discover MCP Tools (MANDATORY)
 
 🚨 **THIS STEP IS MANDATORY - DO NOT SKIP**
 
-Run the MCP Inspector to discover and save the tools:
+Run the MCP Inspector to discover the available tools:
 
 ```bash
-npx --yes @modelcontextprotocol/inspector --cli {MCP_SERVER_URL} --transport http --method tools/list
+npx --yes @modelcontextprotocol/inspector@0.20.0 --cli {MCP_SERVER_URL} --transport http --method tools/list
 ```
 
 **Example:**
 ```bash
-npx --yes @modelcontextprotocol/inspector --cli https://learn.microsoft.com/api/mcp --transport http --method tools/list
+npx --yes @modelcontextprotocol/inspector@0.20.0 --cli https://learn.microsoft.com/api/mcp --transport http --method tools/list
 ```
 
-**⚠️ IMPORTANT:** You MUST run this command and save the output to create the tools file. The plugin manifest references this file and will fail without it.
+**⚠️ IMPORTANT:** You MUST run this command to discover the tools. The output contains the tool definitions that you will inline directly into the plugin manifest's `mcp_tool_description.tools` array.
 
-Save the output as `appPackage/{name}-mcp-tools.json`.
-
-**Expected output file structure (`{name}-mcp-tools.json`):**
+**Expected output structure:**
 ```json
 {
   "tools": [
@@ -91,9 +82,9 @@ Create `{name}-plugin.json` in the `appPackage` folder:
 | `namespace` | Unique identifier, lowercase alphanumeric only |
 | `contact_email` | Publisher contact email |
 
-### Step 4: Add Functions from Tools File
+### Step 4: Add Functions from Inspector Output
 
-Read the `{name}-mcp-tools.json` file you created in Step 2. For EACH tool in the `tools` array, add a corresponding function entry that preserves **ALL** tool properties:
+Read the output from the MCP Inspector (Step 2). For EACH tool in the `tools` array, add a corresponding function entry that preserves **ALL** tool properties:
 
 ```json
 {
@@ -130,9 +121,9 @@ Read the `{name}-mcp-tools.json` file you created in Step 2. For EACH tool in th
 }
 ```
 
-**🚨 CRITICAL: Preserve ALL tool properties when mapping from the tools file:**
+**🚨 CRITICAL: Preserve ALL tool properties when mapping from the Inspector output:**
 
-| MCP Tools File (`inputSchema`) | Plugin Manifest (`functions[]`) |
+| MCP Inspector Output (`inputSchema`) | Plugin Manifest (`functions[]`) |
 |-------------------------------|-------------------------------|
 | `name` | `name` — copy EXACTLY, do not rename |
 | `description` | `description` — use the **full** description text, do NOT abbreviate or summarize |
@@ -144,17 +135,30 @@ Read the `{name}-mcp-tools.json` file you created in Step 2. For EACH tool in th
 
 ### Step 5: Configure the Runtime
 
-Add the `RemoteMCPServer` runtime that references the tools file:
+Add the `RemoteMCPServer` runtime with the tools inlined in `mcp_tool_description.tools`:
 
 ```json
 {
   "runtimes": [
     {
       "type": "RemoteMCPServer",
+      "auth": {
+        "type": "None"
+      },
       "spec": {
         "url": "{MCP_SERVER_URL}",
         "mcp_tool_description": {
-          "file": "{name}-mcp-tools.json"
+          "tools": [
+            {
+              "name": "function_name_1",
+              "description": "Full tool description from MCP Inspector output",
+              "inputSchema": {
+                "type": "object",
+                "properties": { ... },
+                "required": [...]
+              }
+            }
+          ]
         }
       },
       "run_for_functions": [
@@ -166,7 +170,8 @@ Add the `RemoteMCPServer` runtime that references the tools file:
 }
 ```
 
-**⚠️ The `file` field MUST point to the tools file created in Step 2.**
+> **⚠️ IMPORTANT:**
+> - The `mcp_tool_description.tools` array must contain the **complete** tool definitions from the MCP Inspector output (Step 2). Do NOT use a `file` reference — inline the tools directly.
 
 ### Step 6: Register Plugin in Agent Manifest
 
@@ -189,13 +194,13 @@ Add the plugin to your `declarative-agent.json`:
 
 ```
 □ Step 1: Get MCP server URL from user
-□ Step 2: Run MCP Inspector and CREATE {name}-mcp-tools.json file  ← MANDATORY
+□ Step 2: Run MCP Inspector to discover tools                    ← MANDATORY
 □ Step 3: Create {name}-plugin.json with basic structure
-□ Step 4: Add functions array (one entry per tool from tools file)
-□ Step 5: Add runtime with RemoteMCPServer type
-□ Step 6: Verify BOTH files exist in appPackage folder
-□ Step 7: Register plugin in declarative-agent.json
-□ Step 8: Run atk provision
+□ Step 4: Add functions array (one entry per tool from Inspector output)
+□ Step 5: Add runtime with RemoteMCPServer type and inline tools in mcp_tool_description.tools
+□ Step 6: Register plugin in declarative-agent.json
+□ Step 7: Run atk validate --env local
+□ Step 8: Run atk provision --env local
 ```
 
 ---
@@ -204,62 +209,7 @@ Add the plugin to your `declarative-agent.json`:
 
 For the Microsoft Learn MCP server at `https://learn.microsoft.com/api/mcp`:
 
-### File 1: `appPackage/docs-mcp-tools.json` (MANDATORY - CREATE THIS FIRST)
-
-```json
-{
-  "tools": [
-    {
-      "name": "microsoft_docs_search",
-      "description": "Search official Microsoft/Azure documentation to find the most relevant content for a user's query.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "query": {
-            "type": "string",
-            "description": "A query or topic about Microsoft/Azure products"
-          }
-        },
-        "required": ["query"]
-      }
-    },
-    {
-      "name": "microsoft_docs_fetch",
-      "description": "Fetch and convert a Microsoft Learn documentation page to markdown format.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "url": {
-            "type": "string",
-            "description": "URL of the Microsoft documentation page to read"
-          }
-        },
-        "required": ["url"]
-      }
-    },
-    {
-      "name": "microsoft_code_sample_search",
-      "description": "Search for code snippets and examples in official Microsoft Learn documentation.",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "query": {
-            "type": "string",
-            "description": "A descriptive query, SDK name, method name or code snippet"
-          },
-          "language": {
-            "type": "string",
-            "description": "Programming language filter"
-          }
-        },
-        "required": ["query"]
-      }
-    }
-  ]
-}
-```
-
-### File 2: `appPackage/docs-plugin.json`
+### `appPackage/docs-plugin.json`
 
 ```json
 {
@@ -320,10 +270,59 @@ For the Microsoft Learn MCP server at `https://learn.microsoft.com/api/mcp`:
   "runtimes": [
     {
       "type": "RemoteMCPServer",
+      "auth": {
+        "type": "None"
+      },
       "spec": {
         "url": "https://learn.microsoft.com/api/mcp",
         "mcp_tool_description": {
-          "file": "docs-mcp-tools.json"
+          "tools": [
+            {
+              "name": "microsoft_docs_search",
+              "description": "Search official Microsoft/Azure documentation to find the most relevant content for a user's query.",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "description": "A query or topic about Microsoft/Azure products",
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            {
+              "name": "microsoft_docs_fetch",
+              "description": "Fetch and convert a Microsoft Learn documentation page to markdown format.",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "description": "URL of the Microsoft documentation page to read",
+                    "type": "string"
+                  }
+                },
+                "required": ["url"]
+              }
+            },
+            {
+              "name": "microsoft_code_sample_search",
+              "description": "Search for code snippets and examples in official Microsoft Learn documentation.",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "description": "A descriptive query, SDK name, method name or code snippet",
+                    "type": "string"
+                  },
+                  "language": {
+                    "description": "Programming language filter",
+                    "type": "string"
+                  }
+                },
+                "required": ["query"]
+              }
+            }
+          ]
         }
       },
       "run_for_functions": [
@@ -355,24 +354,24 @@ For the Microsoft Learn MCP server at `https://learn.microsoft.com/api/mcp`:
 
 ### List available tools
 ```bash
-npx --yes @modelcontextprotocol/inspector --cli {MCP_URL} --transport http --method tools/list
+npx --yes @modelcontextprotocol/inspector@0.20.0 --cli {MCP_URL} --transport http --method tools/list
 ```
 
 ### Test a specific tool
 ```bash
-npx --yes @modelcontextprotocol/inspector --cli {MCP_URL} --transport http --method tools/call --tool-name {TOOL_NAME} --tool-arg key=value
+npx --yes @modelcontextprotocol/inspector@0.20.0 --cli {MCP_URL} --transport http --method tools/call --tool-name {TOOL_NAME} --tool-arg key=value
 ```
 
 ### Get server info
 ```bash
-npx --yes @modelcontextprotocol/inspector --cli {MCP_URL} --transport http --method initialize
+npx --yes @modelcontextprotocol/inspector@0.20.0 --cli {MCP_URL} --transport http --method initialize
 ```
 
 ---
 
 ## Multiple MCP Servers
 
-You can integrate multiple MCP servers by adding multiple runtimes. Each server needs its own tools file:
+You can integrate multiple MCP servers by adding multiple runtimes, each with its own inline tools:
 
 ```json
 {
@@ -409,17 +408,47 @@ You can integrate multiple MCP servers by adding multiple runtimes. Each server 
   "runtimes": [
     {
       "type": "RemoteMCPServer",
+      "auth": { "type": "None" },
       "spec": {
         "url": "https://learn.microsoft.com/api/mcp",
-        "mcp_tool_description": { "file": "docs-mcp-tools.json" }
+        "mcp_tool_description": {
+          "tools": [
+            {
+              "name": "docs_search",
+              "description": "Search official Microsoft/Azure documentation.",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "query": { "type": "string", "description": "Search query" }
+                },
+                "required": ["query"]
+              }
+            }
+          ]
+        }
       },
       "run_for_functions": ["docs_search"]
     },
     {
       "type": "RemoteMCPServer",
+      "auth": { "type": "None" },
       "spec": {
         "url": "https://api.github.com/mcp",
-        "mcp_tool_description": { "file": "github-mcp-tools.json" }
+        "mcp_tool_description": {
+          "tools": [
+            {
+              "name": "github_search",
+              "description": "Search GitHub repositories, issues, and pull requests.",
+              "inputSchema": {
+                "type": "object",
+                "properties": {
+                  "query": { "type": "string", "description": "Search query" }
+                },
+                "required": ["query"]
+              }
+            }
+          ]
+        }
       },
       "run_for_functions": ["github_search"]
     }
@@ -433,19 +462,18 @@ You can integrate multiple MCP servers by adding multiple runtimes. Each server 
 
 | Issue | Solution |
 |-------|----------|
-| Plugin fails to load | Verify BOTH files exist: `{name}-plugin.json` AND `{name}-mcp-tools.json` |
+| Plugin fails to load | Verify `{name}-plugin.json` exists and has correct `mcp_tool_description.tools` array |
 | MCP Inspector fails | Ensure the server URL is correct and accessible |
-| Tools not recognized | Verify function names match exactly between manifest and tools file |
+| Tools not recognized | Verify function names match exactly between `functions[]` and `mcp_tool_description.tools[]` |
 | Runtime errors | Check that `run_for_functions` includes all functions using that runtime |
-| Missing tools file | Run MCP Inspector and save output to `{name}-mcp-tools.json` |
 
 ---
 
 ## Best Practices
 
-1. **Always create the tools file first** - Generate it from MCP Inspector before writing the plugin manifest
+1. **Always run MCP Inspector first** - Discover tools before writing the plugin manifest
 2. **Preserve ALL tool properties** - Copy the full `description` and complete `inputSchema` → `parameters` for every function; never abbreviate or omit fields
-3. **Version control both files** - Keep both `{name}-plugin.json` and `{name}-mcp-tools.json` in source control
-4. **Match function names exactly** - Copy tool names directly from the tools file
+3. **Inline tools in `mcp_tool_description.tools`** - Do NOT use a separate tools file; embed the tools array directly in the runtime spec
+4. **Match function names exactly** - Copy tool names directly from the Inspector output
 5. **Test locally first** - Use MCP Inspector to verify tools work before integration
 6. **Selective tool exposure** - Only include tools relevant to your agent's purpose, but for included tools always keep the full description and parameters
