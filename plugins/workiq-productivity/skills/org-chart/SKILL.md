@@ -9,11 +9,11 @@ Render a visual ASCII org chart for any person in the organization. Shows the ta
 
 ## When to Use
 
-- "Show me the org chart for Sarah"
+- "Show me the org chart for Firstname2"
 - "Draw the org tree for the Platform team lead"
-- "What does Nadia's org look like?"
+- "What does Firstname8's org look like?"
 - "Show my org chart"
-- "Visualize the reporting structure under Alex"
+- "Visualize the reporting structure under Firstname5"
 
 ## Instructions
 
@@ -138,37 +138,37 @@ For titles not in this list, abbreviate by removing common words ("of", "the") a
 🏛️ ORG CHART
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-                👤 Dana Whitfield (CEO)
+                👤 Firstname1 Lastname1 (CEO)
                 │
-                👤 Marcus Reyes (EVP, Products)
+                👤 Firstname2 Lastname2 (EVP, Products)
                 │
-                👤 Priya Kapoor (CVP, Collaboration)
+                👤 Firstname3 Lastname3 (CVP, Collaboration)
                 │
                 ┌──────────────────────────────┐
-                │     James Holloway            │
+                │     Firstname4 Lastname4      │
                 │     VP Eng                    │
-                │     jamesh@contoso.com        │
+                │     firstname4@contoso.com    │
                 └──────────────┬───────────────┘
                                │
                 ┌──────────────┴──────────────┐
-                │  ⭐ Alex Johnson              │
+                │  ⭐ Firstname5 Lastname5      │
                 │  Engineering Manager         │
-                │  alexj@contoso.com           │
+                │  firstname5@contoso.com      │
                 └──────────────┬──────────────┘
                                │
      ┌────────────┬────────────┼────────────┐
      │            │            │            │
 ┌────┴────┐ ┌────┴────┐ ┌────┴────┐ ┌────┴────┐
-│ Sarah K │ │ Pat R   │ │ Jordan  │ │ Morgan  │
+│ First6  │ │ First7  │ │ First8  │ │ First9  │
 │ Sr SWE  │ │ SWE II  │ │ SWE    │ │ QA Eng  │
 └─────────┘ └─────────┘ └─────────┘ └─────────┘
 
      👔 Managers (0)  ·  🔧 Senior ICs (1)  ·  💻 ICs (3)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 Alex Johnson has 4 direct reports
-   Chain: CEO → Marcus Reyes → Priya Kapoor → James Holloway → ⭐ Alex Johnson
-📧 alexj@contoso.com
+📊 Firstname5 Lastname5 has 4 direct reports
+   Chain: CEO → Firstname2 Lastname2 → Firstname3 Lastname3 → Firstname4 Lastname4 → ⭐ Firstname5 Lastname5
+📧 firstname5@contoso.com
 ```
 
 The ancestors above the direct manager use a **compact single‑line format**: `👤 Name (Abbreviated Title)` connected by `│` lines. This keeps the chart readable even with deep hierarchies. Only the **direct manager** and the **target** get full box treatment.
@@ -181,17 +181,17 @@ When there are more than 6 direct reports, switch to a **compact list layout** b
 🏛️ ORG CHART
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-                👤 Dana Whitfield (CEO)
+                👤 Firstname1 Lastname1 (CEO)
                 │
-                👤 Marcus Reyes (EVP)
+                👤 Firstname2 Lastname2 (EVP)
                 │
                 ┌─────────────────────────────┐
-                │     Lena Petrova            │
+                │     Firstname7 Lastname7    │
                 │     VP Eng                  │
                 └──────────────┬──────────────┘
                                │
                 ┌──────────────┴──────────────┐
-                │  ⭐ Nadia Okoye              │
+                │  ⭐ Firstname8 Lastname8     │
                 │  Partner Grp SW Eng Mgr     │
                 └──────────────┬──────────────┘
                                │
@@ -200,21 +200,21 @@ When there are more than 6 direct reports, switch to a **compact list layout** b
 
 👔 MANAGERS (3)
  #  Name                     Title                    Email
- 1  Carlos Mendes            Prin SW Eng Mgr          cmendes@contoso.com
- 2  Anika Larsen             Prin SW Eng Mgr          alarsen@contoso.com
- 3  Raj Malhotra             SW Eng Mgr               rmalhotra@contoso.com
+ 1  Firstname10 Lastname10   Prin SW Eng Mgr          firstname10@contoso.com
+ 2  Firstname11 Lastname11   Prin SW Eng Mgr          firstname11@contoso.com
+ 3  Firstname12 Lastname12   SW Eng Mgr               firstname12@contoso.com
 
 🔧 SENIOR ICs (4)
  #  Name                     Title                    Email
- 4  Tomoko Ishida            Prin SWE                 tishida@contoso.com
- 5  Felix Brandt             Prin SWE                 fbrandt@contoso.com
- 6  Maya Chen                Prin SWE                 mchen@contoso.com
- 7  Omar El-Sayed            Prin SW Eng Mgr          oelsayed@contoso.com
+ 4  Firstname13 Lastname13   Prin SWE                 firstname13@contoso.com
+ 5  Firstname14 Lastname14   Prin SWE                 firstname14@contoso.com
+ 6  Firstname15 Lastname15   Prin SWE                 firstname15@contoso.com
+ 7  Firstname16 Lastname16   Prin SW Eng Mgr          firstname16@contoso.com
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 Nadia Okoye has 7 direct reports
-   Chain: CEO → Marcus Reyes → Lena Petrova → ⭐ Nadia Okoye
-📧 Nadia.Okoye@contoso.com
+📊 Firstname8 Lastname8 has 7 direct reports
+   Chain: CEO → Firstname2 Lastname2 → Firstname7 Lastname7 → ⭐ Firstname8 Lastname8
+📧 Firstname8.Lastname8@contoso.com
 ```
 
 ### Summary Line
@@ -246,8 +246,8 @@ Always end with a summary that includes the full reporting chain:
 - Say "show my org chart" for a quick view of where you sit.
 - Say "org chart for {name}" to explore anyone in the company.
 - After viewing, you can say "email #3" to contact a specific person, or "schedule a meeting with the managers" to book time.
-- Ask follow-up questions like "find all PMs under Sarah's org" for deeper searches.
-- Say "go deeper on Carlos" to expand a manager's subtree.
+- Ask follow-up questions like "find all PMs under Firstname6's org" for deeper searches.
+- Say "go deeper on Firstname10" to expand a manager's subtree.
 
 ## Examples
 
@@ -261,23 +261,23 @@ Always end with a summary that includes the full reporting chain:
 
 ### Example 2: Look up a colleague by name
 
-**User:** Draw the org chart for Nadia Okoye
+**User:** Draw the org chart for Firstname8 Lastname8
 
-**Result:** Resolves Nadia via `ask_work_iq`, fetches her manager and direct reports in parallel, walks the chain up to the org root, and renders a wide org chart with a compact list layout (since she has 7 direct reports).
+**Result:** Resolves Firstname8 via `ask_work_iq`, fetches their manager and direct reports in parallel, walks the chain up to the org root, and renders a wide org chart with a compact list layout (since they have 7 direct reports).
 
 ---
 
 ### Example 3: Ambiguous name requiring disambiguation
 
-**User:** Show the org chart for Alex
+**User:** Show the org chart for Firstname5
 
-**Result:** `ask_work_iq` returns multiple matches (e.g., Alex Johnson, Alex Kim, Alex Patel). Claude prompts:
+**Result:** `ask_work_iq` returns multiple matches (e.g., Firstname5 Lastname5, Firstname5 Lastname17, Firstname5 Lastname18). Claude prompts:
 
 ```
-I found multiple people named Alex. Which one did you mean?
- 1. Alex Johnson — Engineering Manager, Platform Team
- 2. Alex Kim — Senior Software Engineer, Security
- 3. Alex Patel — Program Manager, Growth
+I found multiple people named Firstname5. Which one did you mean?
+ 1. Firstname5 Lastname5 — Engineering Manager, Platform Team
+ 2. Firstname5 Lastname17 — Senior Software Engineer, Security
+ 3. Firstname5 Lastname18 — Program Manager, Growth
 ```
 
 Once the user selects, the full org chart is rendered for the chosen person.
@@ -299,7 +299,7 @@ When `ask_work_iq` indicates there is no manager for a person, treat that person
 
 If `ask_work_iq` indicates the person has no direct reports, render the chart without the branch lines below the target. Include a note:
 ```
-📊 Alex Johnson has 0 direct reports.
+📊 Firstname5 Lastname5 has 0 direct reports.
 ```
 
 ### Ambiguous Name — Too Many Results
