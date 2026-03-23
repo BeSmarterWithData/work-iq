@@ -6,20 +6,7 @@ This document provides workflow examples for common M365 Copilot JSON-based agen
 
 ---
 
-## Example 1: Validate JSON Manifest
-
-Validate manifest files using the ATK CLI:
-
-```bash
-# Validate manifest with ATK CLI (the ONLY supported validation method)
-atk validate --env local
-```
-
-**Use case:** Local validation of manifest schema and required fields before deployment.
-
----
-
-## Example 2: Development and Provisioning
+## Example 1: Development and Provisioning
 
 Complete workflow for provisioning a JSON-based agent to a development environment:
 
@@ -28,7 +15,7 @@ Complete workflow for provisioning a JSON-based agent to a development environme
 npm install
 
 # Provision agent to development environment (no compile step needed for JSON agents)
-atk provision --env local
+npx -y --package @microsoft/m365agentstoolkit-cli atk provision --env local --interactive false
 ```
 
 **Result:** Returns a test URL like `https://m365.cloud.microsoft/chat/?titleId=T_abc123xyz` to test the agent in Microsoft 365 Copilot.
@@ -37,16 +24,16 @@ atk provision --env local
 
 ---
 
-## Example 3: Provision and Share Agent
+## Example 2: Provision and Share Agent
 
 Workflow for provisioning and sharing an agent with your organization:
 
 ```bash
 # Provision agent to target environment
-atk provision --env dev
+npx -y --package @microsoft/m365agentstoolkit-cli atk provision --env dev --interactive false
 
 # Share agent with tenant users
-atk share --scope tenant --env dev
+npx -y --package @microsoft/m365agentstoolkit-cli atk share --scope tenant --env dev
 ```
 
 **Result:** Agent becomes available to all users in the Microsoft 365 tenant.
@@ -55,13 +42,13 @@ atk share --scope tenant --env dev
 
 ---
 
-## Example 4: Package Agent for Distribution
+## Example 3: Package Agent for Distribution
 
 Workflow for creating an agent package for distribution:
 
 ```bash
 # Package agent for distribution
-atk package --env prod
+npx -y --package @microsoft/m365agentstoolkit-cli atk package --env prod
 ```
 
 **Result:** Creates a distributable package file that can be uploaded to the Microsoft 365 admin center or shared externally.
@@ -70,7 +57,7 @@ atk package --env prod
 
 ---
 
-## Example 5: Basic Declarative Agent JSON
+## Example 4: Basic Declarative Agent JSON
 
 A minimal declarative agent manifest file (`declarativeAgent.json`):
 
@@ -85,7 +72,7 @@ A minimal declarative agent manifest file (`declarativeAgent.json`):
 
 ---
 
-## Example 6: Agent with Capabilities
+## Example 5: Agent with Capabilities
 
 A declarative agent with SharePoint and Email capabilities:
 
@@ -113,7 +100,7 @@ A declarative agent with SharePoint and Email capabilities:
 
 ---
 
-## Example 7: Agent with Conversation Starters
+## Example 6: Agent with Conversation Starters
 
 A declarative agent with helpful conversation starters:
 
@@ -142,7 +129,7 @@ A declarative agent with helpful conversation starters:
 
 ---
 
-## Example 8: Agent with API Plugin Action
+## Example 7: Agent with API Plugin Action
 
 A declarative agent connected to an external API:
 
@@ -173,7 +160,7 @@ A declarative agent connected to an external API:
 
 ---
 
-## Example 9: API Plugin Manifest
+## Example 8: API Plugin Manifest
 
 A complete API plugin manifest file (`plugins/repairs-plugin.json`):
 
@@ -245,7 +232,7 @@ A complete API plugin manifest file (`plugins/repairs-plugin.json`):
 
 ---
 
-## Example 10: Full Agent with All Features
+## Example 9: Full Agent with All Features
 
 A complete agent combining all features:
 
@@ -303,3 +290,113 @@ A complete agent combining all features:
   }
 }
 ```
+
+---
+
+## Example 10: Localized Agent
+
+A declarative agent with tokenized strings for multi-language support.
+
+### Tokenized `declarativeAgent.json`
+
+```json
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/copilot/declarative-agent/v1.6/schema.json",
+  "version": "v1.6",
+  "name": "[[agent_name]]",
+  "description": "[[agent_description]]",
+  "instructions": "$[file]('instructions.txt')",
+  "conversation_starters": [
+    {
+      "title": "[[starter_status_title]]",
+      "text": "[[starter_status_text]]"
+    },
+    {
+      "title": "[[starter_kb_title]]",
+      "text": "[[starter_kb_text]]"
+    }
+  ],
+  "disclaimer": {
+    "text": "[[disclaimer_text]]"
+  }
+}
+```
+
+### `manifest.json` with `localizationInfo`
+
+```json
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/vDevPreview/MicrosoftTeams.schema.json",
+  "manifestVersion": "devPreview",
+  "localizationInfo": {
+    "defaultLanguageTag": "en",
+    "defaultLanguageFile": "en.json",
+    "additionalLanguages": [
+      {
+        "languageTag": "fr",
+        "file": "fr.json"
+      }
+    ]
+  },
+  "name": {
+    "short": "Support Agent",
+    "full": "Customer Support Agent"
+  },
+  "description": {
+    "short": "Get help with support issues",
+    "full": "An agent that helps resolve customer support issues using internal knowledge bases."
+  },
+  "copilotAgents": {
+    "declarativeAgents": [
+      {
+        "id": "declarativeAgent",
+        "file": "declarativeAgent.json"
+      }
+    ]
+  }
+}
+```
+
+### Default language file (`en.json`)
+
+```json
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/vDevPreview/MicrosoftTeams.Localization.schema.json",
+  "name.short": "Support Agent",
+  "name.full": "Customer Support Agent",
+  "description.short": "Get help with support issues",
+  "description.full": "An agent that helps resolve customer support issues using internal knowledge bases.",
+  "localizationKeys": {
+    "agent_name": "Customer Support Agent",
+    "agent_description": "An agent that helps resolve customer support issues using internal knowledge bases.",
+    "starter_status_title": "Check ticket status",
+    "starter_status_text": "What is the status of my open tickets?",
+    "starter_kb_title": "Search knowledge base",
+    "starter_kb_text": "How do I reset my password?",
+    "disclaimer_text": "This agent provides general support guidance. For urgent issues, contact the helpdesk."
+  }
+}
+```
+
+### French language file (`fr.json`)
+
+```json
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/vDevPreview/MicrosoftTeams.Localization.schema.json",
+  "name.short": "Agent de support",
+  "name.full": "Agent de support client",
+  "description.short": "Obtenez de l'aide pour vos problèmes",
+  "description.full": "Un agent qui aide à résoudre les problèmes de support client à l'aide des bases de connaissances internes.",
+  "localizationKeys": {
+    "agent_name": "Agent de support client",
+    "agent_description": "Un agent qui aide à résoudre les problèmes de support client à l'aide des bases de connaissances internes.",
+    "starter_status_title": "Vérifier le statut du ticket",
+    "starter_status_text": "Quel est le statut de mes tickets ouverts ?",
+    "starter_kb_title": "Rechercher la base de connaissances",
+    "starter_kb_text": "Comment réinitialiser mon mot de passe ?",
+    "disclaimer_text": "Cet agent fournit des conseils de support généraux. Pour les problèmes urgents, contactez le service d'assistance."
+  }
+}
+```
+
+**Reference:** [localization.md](localization.md) for the full localization workflow

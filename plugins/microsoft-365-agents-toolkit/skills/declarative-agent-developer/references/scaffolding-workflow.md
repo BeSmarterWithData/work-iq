@@ -6,24 +6,24 @@ Step-by-step instructions for scaffolding a new M365 Copilot agent project.
 
 ### ATK CLI Setup
 
-Check if ATK CLI is available by running `atk --version`. If the command is not found, **STOP and tell the user** that the ATK CLI is required but not installed. Do NOT attempt to install it yourself — the user must install ATK separately before you can proceed.
+Check if ATK CLI is available by running `npx -y --package @microsoft/m365agentstoolkit-cli atk --version`. If the command is not found, **STOP and tell the user** that the ATK CLI is required but not installed. Do NOT attempt to install it yourself — the user must install ATK separately before you can proceed.
 
 ### The Only Valid Command
 
 Copy this command EXACTLY. Replace `<project-name>` with the user's project name:
 
 ```bash
-atk new -n <project-name> -c declarative-agent -with-plugin no -i false
+npx -y --package @microsoft/m365agentstoolkit-cli atk new -n <project-name> -c declarative-agent -with-plugin no -i false
 ```
 
 ### Forbidden Commands — These Do Not Exist
 
 | ❌ Invalid Command | Why It Fails |
 |-------------------|--------------|
-| `atk init` | DOES NOT EXIST — there is no init command |
-| `atk init --template` | DOES NOT EXIST — there is no init or --template flag |
-| `atk create` | DOES NOT EXIST — there is no create command |
-| `atk scaffold` | DOES NOT EXIST — there is no scaffold command |
+| `npx -y --package @microsoft/m365agentstoolkit-cli atk init` | DOES NOT EXIST — there is no init command |
+| `npx -y --package @microsoft/m365agentstoolkit-cli atk init --template` | DOES NOT EXIST — there is no init or --template flag |
+| `npx -y --package @microsoft/m365agentstoolkit-cli atk create` | DOES NOT EXIST — there is no create command |
+| `npx -y --package @microsoft/m365agentstoolkit-cli atk scaffold` | DOES NOT EXIST — there is no scaffold command |
 | `--template anything` | DOES NOT EXIST — there is no --template flag |
 
 ---
@@ -74,7 +74,7 @@ Always use `-i false` (non-interactive mode) to prevent unexpected prompts.
 
 1. **Create the project:**
 ```bash
-atk new -n <project-name> -c declarative-agent -with-plugin no -i false
+npx -y --package @microsoft/m365agentstoolkit-cli atk new -n <project-name> -c declarative-agent -with-plugin no -i false
 ```
 
 2. **Move all files from the subfolder to current directory:**
@@ -118,42 +118,33 @@ When working on this project, you MUST use the appropriate skill for the task. *
 
 | Skill | When to Use |
 |-------|-------------|
-| **declarative-agent-developer** | Any task involving this agent: editing manifests, adding/removing capabilities, adding plugins, updating instructions, deploying, validating, fixing errors. **This is the primary skill for this project.** |
+| **declarative-agent-developer** | Any task involving this agent (see scenarios below). **This is the primary skill for this project.** |
 | **ui-widget-developer** | Only when adding an MCP server that renders rich interactive widgets (HTML) in Copilot Chat using the OpenAI Apps SDK. |
 | **install-atk** | Only when the ATK CLI is not installed or needs updating. |
 
 ## ⛔ MANDATORY: Invoke `declarative-agent-developer` Skill First
 
-**For ANY task related to this agent project, you MUST invoke the `declarative-agent-developer` skill BEFORE doing any work.** This applies to:
+**This is a declarative agent project. For ANY task in this workspace — regardless of what it is — you MUST invoke the `declarative-agent-developer` skill BEFORE doing any work.** This is not optional. Do not attempt to handle any task yourself. Always delegate to the skill.
 
-- Adding, removing, or modifying capabilities
-- Adding API plugins or MCP servers
-- Editing instructions or conversation starters
-- Validating or deploying the agent
-- Fixing manifest errors
-- Rewriting content for a new audience
-- Any edit to files in `appPackage/`
+### Scenarios handled by this skill
+
+- Creating a new agent project from scratch
+- Editing manifests (declarativeAgent.json, manifest.json, m365agents.yml)
+- Adding or removing capabilities (web search, Graph connectors, etc.)
+- Adding API plugins from OpenAPI specs
+- Adding MCP server plugins
+- Adding OAuth authentication to plugins
+- Localizing an agent into multiple languages
+- Adding a new language to an already-localized agent
+- Writing or updating agent instructions
+- Deploying and provisioning with `atk provision`
+- Validating the project with `atk validate`
+- Fixing manifest errors or validation failures
 
 **Do NOT:**
 - Edit `declarativeAgent.json` or other manifest files directly without the skill
-- Run `atk` commands without the skill
+- Run `npx -y --package @microsoft/m365agentstoolkit-cli atk` commands without the skill
 - "Help" by manually making changes — always delegate to the skill
-
-## ⛔ MANDATORY: Run `atk validate --env local` as First Step
-
-When the `declarative-agent-developer` skill is invoked, the **very first action** must be:
-
-```bash
-atk validate --env local
-```
-
-This command serves as the project fingerprint:
-- ✅ If it succeeds (with or without warnings) → valid ATK project, proceed with the task
-- ❌ If it reports errors → manifest has issues, follow the Detect → Inform → Ask protocol
-- ❌ If it fails to run (command not found) → ATK CLI is not installed
-- ❌ If it fails with "not an ATK project" or similar → workspace is not an agent project
-
-**This replaces manual file-checking.** Let the ATK CLI tell you the project state.
 ````
 
 **Rules:**
@@ -198,5 +189,5 @@ This workflow **only** handles project creation and agent context setup. After s
 | ATK CLI not installed | Stop. Tell the user to install ATK first. |
 | Directory not empty | Stop. Show error message. Do not proceed. |
 | Invalid project name | Warn and suggest a corrected name. |
-| `atk new` command fails | Report the error with full output. Do not retry. |
+| `npx -y --package @microsoft/m365agentstoolkit-cli atk new` command fails | Report the error with full output. Do not retry. |
 | File move fails | Report the error. Files may still be in the subfolder. |
