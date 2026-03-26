@@ -1,0 +1,8 @@
+{
+  "name": "workiq-email-sender",
+  "description": "Compose and send Outlook emails or save drafts via Microsoft Graph API — send, draft, and follow-up on emails directly from Copilot.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Microsoft"
+  }
+}

@@ -44,6 +44,15 @@
         "./plugins/workiq-productivity/skills/channel-audit",
         "./plugins/workiq-productivity/skills/channel-digest"
       ]
+    },
+    {
+      "name": "workiq-email-sender",
+      "source": "./plugins/workiq-email-sender",
+      "version": "1.0.0",
+      "description": "Compose and send Outlook emails or save drafts via Microsoft Graph API — send, draft, and follow-up on emails directly from Copilot.",
+      "skills": [
+        "./plugins/workiq-email-sender/skills/email-sender"
+      ]
     }
   ]
 }

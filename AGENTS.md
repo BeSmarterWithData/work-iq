@@ -84,6 +84,10 @@ plugins/<plugin-name>/
   - `channel-digest` skill — Summarize activity across multiple channels
   - MCP server (`@microsoft/workiq`) with tools: `ask_work_iq`, `accept_eula`, `get_debug_link`
 
+- **workiq-email-sender** — Compose and send Outlook emails via Microsoft Graph API. Bundles:
+  - `email-sender` skill — Send emails, create drafts, and send drafts with confirmation workflow
+  - Custom MCP server with tools: `send_email`, `create_draft`, `send_draft`
+
 ## Prerequisites
 
 - **Node.js 18+** — Required for the workiq MCP server (`npx`)

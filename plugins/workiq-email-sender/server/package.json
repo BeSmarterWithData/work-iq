@@ -1,0 +1,14 @@
+{
+  "name": "workiq-email-sender-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for sending Outlook emails via Microsoft Graph API",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@azure/msal-node": "^2.16.0",
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  }
+}
