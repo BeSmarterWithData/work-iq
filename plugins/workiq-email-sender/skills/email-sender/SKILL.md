@@ -1,11 +1,11 @@
 ---
 name: email-sender
-description: Compose and send Outlook emails or save drafts via Microsoft Graph. USE THIS SKILL when a user asks to send, compose, write, draft, or email someone. Supports To, CC, BCC, importance, and HTML or plain text bodies. Trigger phrases include "send an email", "email John about", "write a message to", "compose an email", "draft an email to", "mail the team about", "send a follow-up", "reply to", "forward to", "notify someone", "send a note to".
+description: Compose and send emails or save drafts via Gmail SMTP. USE THIS SKILL when a user asks to send, compose, write, draft, or email someone. Supports To, CC, BCC, and HTML or plain text bodies. Trigger phrases include "send an email", "email John about", "write a message to", "compose an email", "draft an email to", "mail the team about", "send a follow-up", "reply to", "forward to", "notify someone", "send a note to".
 ---
 
 # Email Sender
 
-Send emails and create drafts directly from Copilot CLI via Microsoft Graph API. This skill fills the gap between read-only M365 queries (WorkIQ) and taking action on your email.
+Send emails and create drafts directly from Copilot CLI via Gmail SMTP. This skill fills the gap between read-only M365 queries (WorkIQ) and taking action on your email.
 
 ## CRITICAL: When to Use This Skill
 
@@ -161,6 +161,21 @@ Send an existing draft by ID.
 |-----------|------|----------|-------------|
 | `draft_id` | string | Yes | Draft message ID from `create_draft` |
 
+### refresh_auth
+
+Clear cached tokens and re-authenticate with Microsoft 365. Use when other tools fail with `invalid_grant` or expired token errors.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| _(none)_ | — | — | No parameters needed |
+
+## Error Recovery
+
+If `send_email` or `create_draft` fails with `invalid_grant`:
+1. Call `refresh_auth` to clear stale tokens and trigger device-code login
+2. Follow the authentication instructions printed to stderr
+3. Retry the original operation
+
 ## Required MCP Tools
 
 | MCP Server | Tool | Purpose |
@@ -168,6 +183,7 @@ Send an existing draft by ID.
 | workiq-email-sender | `send_email` | Send an email immediately |
 | workiq-email-sender | `create_draft` | Save email as draft in Outlook |
 | workiq-email-sender | `send_draft` | Send a previously created draft |
+| workiq-email-sender | `refresh_auth` | Re-authenticate when tokens expire |
 | workiq (Local WorkIQ CLI) | `ask_work_iq` | Look up recipient email addresses, reference prior emails for context |
 
 ## Examples

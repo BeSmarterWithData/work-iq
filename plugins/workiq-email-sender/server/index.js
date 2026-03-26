@@ -3,152 +3,62 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import * as msal from "@azure/msal-node";
-import https from "node:https";
-import fs from "node:fs";
+import nodemailer from "nodemailer";
+import { execSync } from "node:child_process";
 import path from "node:path";
-import os from "node:os";
+import { fileURLToPath } from "node:url";
 
 // -- Configuration ----------------------------------------------------------
+// Credentials are read from Windows Credential Manager (target: WorkIQ-Gmail).
+// Store them once with:
+//   cmdkey /generic:WorkIQ-Gmail /user:your-email@gmail.com /pass:your-app-password
+// Falls back to GMAIL_USER / GMAIL_APP_PASS env vars if Credential Manager is unavailable.
 
-// Uses the same Entra app registration as WorkIQ CLI.
-// If you have a different app, update these values or set env vars.
-const CLIENT_ID = process.env.WORKIQ_EMAIL_CLIENT_ID || "b8058408-82b2-4b47-b13d-b547be0310d8";
-const TENANT_ID = process.env.WORKIQ_EMAIL_TENANT_ID || "common";
-const AUTHORITY = `https://login.microsoftonline.com/${TENANT_ID}`;
-const SCOPES = ["https://graph.microsoft.com/Mail.Send", "https://graph.microsoft.com/Mail.ReadWrite"];
-
-const TOKEN_CACHE_DIR = path.join(os.homedir(), ".workiq-email-sender");
-const TOKEN_CACHE_FILE = path.join(TOKEN_CACHE_DIR, "token-cache.json");
-
-// -- MSAL helpers -----------------------------------------------------------
-
-function buildPca() {
-  const config = {
-    auth: { clientId: CLIENT_ID, authority: AUTHORITY },
-    cache: { cachePlugin: undefined },
-  };
-  const pca = new msal.PublicClientApplication(config);
-
-  // Restore persisted token cache
-  if (fs.existsSync(TOKEN_CACHE_FILE)) {
-    try {
-      const cacheData = fs.readFileSync(TOKEN_CACHE_FILE, "utf-8");
-      pca.getTokenCache().deserialize(cacheData);
-    } catch {
-      // Corrupted cache – ignore and re-auth
-    }
-  }
-  return pca;
-}
-
-function persistCache(pca) {
+function getCredentials() {
+  // Try Windows Credential Manager via a helper PowerShell script
   try {
-    if (!fs.existsSync(TOKEN_CACHE_DIR)) {
-      fs.mkdirSync(TOKEN_CACHE_DIR, { recursive: true });
-    }
-    fs.writeFileSync(TOKEN_CACHE_FILE, pca.getTokenCache().serialize());
+    const scriptPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "get-cred.ps1");
+    const out = execSync(`powershell -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}"`, {
+      encoding: "utf-8",
+      timeout: 10000,
+    }).trim();
+    const sep = out.indexOf("|");
+    if (sep > 0) return { user: out.slice(0, sep), pass: out.slice(sep + 1) };
   } catch {
-    // Non-fatal
-  }
-}
-
-async function getAccessToken(pca) {
-  // 1. Try silent (cached token / refresh token)
-  const accounts = await pca.getTokenCache().getAllAccounts();
-  if (accounts.length > 0) {
-    try {
-      const silent = await pca.acquireTokenSilent({
-        account: accounts[0],
-        scopes: SCOPES,
-      });
-      persistCache(pca);
-      return silent.accessToken;
-    } catch {
-      // Fall through to interactive
-    }
+    // Fall through to env vars
   }
 
-  // 2. Device-code flow (user authenticates in browser)
-  const deviceCodeRequest = {
-    scopes: SCOPES,
-    deviceCodeCallback: (response) => {
-      // Print to stderr so it doesn't interfere with MCP stdio
-      process.stderr.write(`\n🔑 AUTH REQUIRED: ${response.message}\n\n`);
-    },
-  };
-  const result = await pca.acquireTokenByDeviceCode(deviceCodeRequest);
-  persistCache(pca);
-  return result.accessToken;
+  // Fallback to env vars
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASS;
+  if (user && pass) return { user, pass };
+
+  throw new Error(
+    "No Gmail credentials found. Either:\n" +
+    "  1. Store in Windows Credential Manager: cmdkey /generic:WorkIQ-Gmail /user:you@gmail.com /pass:your-app-password\n" +
+    "  2. Set env vars: GMAIL_USER and GMAIL_APP_PASS"
+  );
 }
 
-// -- Graph API helpers ------------------------------------------------------
-
-function graphRequest(method, urlPath, accessToken, body) {
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: "graph.microsoft.com",
-      path: `/v1.0${urlPath}`,
-      method,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-    };
-
-    const req = https.request(options, (res) => {
-      let data = "";
-      res.on("data", (chunk) => (data += chunk));
-      res.on("end", () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve(data ? JSON.parse(data) : {});
-        } else {
-          reject(new Error(`Graph API ${res.statusCode}: ${data}`));
-        }
-      });
-    });
-    req.on("error", reject);
-    if (body) req.write(JSON.stringify(body));
-    req.end();
-  });
-}
-
-function buildMessage({ to, cc, bcc, subject, body, bodyType, importance }) {
-  const toRecipients = to.map((addr) => ({
-    emailAddress: { address: addr.trim() },
-  }));
-
-  const ccRecipients = (cc || []).map((addr) => ({
-    emailAddress: { address: addr.trim() },
-  }));
-
-  const bccRecipients = (bcc || []).map((addr) => ({
-    emailAddress: { address: addr.trim() },
-  }));
-
-  return {
-    subject,
-    body: { contentType: bodyType || "Text", content: body },
-    toRecipients,
-    ...(ccRecipients.length > 0 && { ccRecipients }),
-    ...(bccRecipients.length > 0 && { bccRecipients }),
-    ...(importance && { importance }),
-  };
+function getTransporter() {
+  const { user, pass } = getCredentials();
+  return { transporter: nodemailer.createTransport({
+    service: "gmail",
+    auth: { user, pass },
+  }), user };
 }
 
 // -- MCP Server -------------------------------------------------------------
 
-const pca = buildPca();
-
 const server = new McpServer({
   name: "workiq-email-sender",
-  version: "1.0.0",
+  version: "2.0.0",
 });
 
 // Tool: send_email
 server.tool(
   "send_email",
-  "Send an email via Outlook/Microsoft 365. Requires Mail.Send permission. IMPORTANT: Always confirm with the user before calling this tool.",
+  "Send an email via Gmail SMTP. IMPORTANT: Always confirm with the user before calling this tool.",
   {
     to: z.array(z.string()).describe("Recipient email addresses"),
     subject: z.string().describe("Email subject line"),
@@ -156,23 +66,26 @@ server.tool(
     cc: z.array(z.string()).optional().describe("CC email addresses"),
     bcc: z.array(z.string()).optional().describe("BCC email addresses"),
     body_type: z.enum(["Text", "HTML"]).optional().default("Text").describe("Body format: Text or HTML"),
-    importance: z.enum(["low", "normal", "high"]).optional().default("normal").describe("Email importance level"),
   },
-  async ({ to, subject, body, cc, bcc, body_type, importance }) => {
+  async ({ to, subject, body, cc, bcc, body_type }) => {
     try {
-      const accessToken = await getAccessToken(pca);
-      const message = buildMessage({ to, cc, bcc, subject, body, bodyType: body_type, importance });
+      const { transporter, user } = getTransporter();
+      const mailOptions = {
+        from: user,
+        to: to.join(", "),
+        subject,
+        ...(cc?.length && { cc: cc.join(", ") }),
+        ...(bcc?.length && { bcc: bcc.join(", ") }),
+        ...(body_type === "HTML" ? { html: body } : { text: body }),
+      };
 
-      await graphRequest("POST", "/me/sendMail", accessToken, {
-        message,
-        saveToSentItems: true,
-      });
+      const info = await transporter.sendMail(mailOptions);
 
       return {
         content: [
           {
             type: "text",
-            text: `✅ Email sent successfully!\n\n📧 To: ${to.join(", ")}\n📋 Subject: ${subject}${cc?.length ? `\nCC: ${cc.join(", ")}` : ""}${bcc?.length ? `\nBCC: ${bcc.join(", ")}` : ""}\n📌 Importance: ${importance || "normal"}\n📁 Saved to Sent Items`,
+            text: `✅ Email sent successfully!\n\n📧 From: ${user}\n📧 To: ${to.join(", ")}\n📋 Subject: ${subject}${cc?.length ? `\nCC: ${cc.join(", ")}` : ""}${bcc?.length ? `\nBCC: ${bcc.join(", ")}` : ""}\n🆔 Message ID: ${info.messageId}`,
           },
         ],
       };
@@ -181,7 +94,7 @@ server.tool(
         content: [
           {
             type: "text",
-            text: `❌ Failed to send email: ${error.message}\n\nTroubleshooting:\n• Ensure Mail.Send permission is granted\n• Check the recipient addresses are valid\n• Re-authenticate if the token expired`,
+            text: `❌ Failed to send email: ${error.message}\n\nTroubleshooting:\n• Store credentials: cmdkey /generic:WorkIQ-Gmail /user:you@gmail.com /pass:your-app-password\n• Or set env vars: GMAIL_USER and GMAIL_APP_PASS\n• Verify the App Password is correct (https://myaccount.google.com/apppasswords)`,
           },
         ],
         isError: true,
@@ -193,7 +106,7 @@ server.tool(
 // Tool: create_draft
 server.tool(
   "create_draft",
-  "Create a draft email in Outlook (saved to Drafts folder, not sent). Useful for composing emails the user wants to review before sending.",
+  "Create a draft email saved locally as a JSON file. Use this when the user wants to review before sending.",
   {
     to: z.array(z.string()).describe("Recipient email addresses"),
     subject: z.string().describe("Email subject line"),
@@ -201,31 +114,33 @@ server.tool(
     cc: z.array(z.string()).optional().describe("CC email addresses"),
     bcc: z.array(z.string()).optional().describe("BCC email addresses"),
     body_type: z.enum(["Text", "HTML"]).optional().default("Text").describe("Body format: Text or HTML"),
-    importance: z.enum(["low", "normal", "high"]).optional().default("normal").describe("Email importance level"),
   },
-  async ({ to, subject, body, cc, bcc, body_type, importance }) => {
+  async ({ to, subject, body, cc, bcc, body_type }) => {
     try {
-      const accessToken = await getAccessToken(pca);
-      const message = buildMessage({ to, cc, bcc, subject, body, bodyType: body_type, importance });
+      const fs = await import("fs");
+      const path = await import("path");
+      const os = await import("os");
 
-      const draft = await graphRequest("POST", "/me/messages", accessToken, message);
+      const draftDir = path.join(os.homedir(), ".workiq-email-sender", "drafts");
+      if (!fs.existsSync(draftDir)) fs.mkdirSync(draftDir, { recursive: true });
+
+      const { user } = getCredentials();
+      const draftId = `draft-${Date.now()}`;
+      const draft = { id: draftId, from: user, to, cc, bcc, subject, body, body_type, created: new Date().toISOString() };
+      const draftPath = path.join(draftDir, `${draftId}.json`);
+      fs.writeFileSync(draftPath, JSON.stringify(draft, null, 2));
 
       return {
         content: [
           {
             type: "text",
-            text: `📝 Draft created successfully!\n\n📧 To: ${to.join(", ")}\n📋 Subject: ${subject}${cc?.length ? `\nCC: ${cc.join(", ")}` : ""}${bcc?.length ? `\nBCC: ${bcc.join(", ")}` : ""}\n📌 Importance: ${importance || "normal"}\n📂 Saved to Drafts folder\n🔗 Draft ID: ${draft.id}\n\nOpen Outlook to review and send the draft.`,
+            text: `📝 Draft saved!\n\n📧 To: ${to.join(", ")}\n📋 Subject: ${subject}\n🆔 Draft ID: ${draftId}\n📂 Saved to: ${draftPath}\n\nUse send_draft with this ID to send it.`,
           },
         ],
       };
     } catch (error) {
       return {
-        content: [
-          {
-            type: "text",
-            text: `❌ Failed to create draft: ${error.message}\n\nTroubleshooting:\n• Ensure Mail.ReadWrite permission is granted\n• Check the recipient addresses are valid\n• Re-authenticate if the token expired`,
-          },
-        ],
+        content: [{ type: "text", text: `❌ Failed to create draft: ${error.message}` }],
         isError: true,
       };
     }
@@ -235,31 +150,44 @@ server.tool(
 // Tool: send_draft
 server.tool(
   "send_draft",
-  "Send an existing draft email by its draft ID. Use create_draft first, then send_draft after user confirms.",
+  "Send a previously saved draft email by its draft ID.",
   {
-    draft_id: z.string().describe("The draft message ID returned by create_draft"),
+    draft_id: z.string().describe("The draft ID returned by create_draft"),
   },
   async ({ draft_id }) => {
     try {
-      const accessToken = await getAccessToken(pca);
-      await graphRequest("POST", `/me/messages/${draft_id}/send`, accessToken, null);
+      const fs = await import("fs");
+      const path = await import("path");
+      const os = await import("os");
+
+      const draftPath = path.join(os.homedir(), ".workiq-email-sender", "drafts", `${draft_id}.json`);
+      if (!fs.existsSync(draftPath)) throw new Error(`Draft not found: ${draft_id}`);
+
+      const draft = JSON.parse(fs.readFileSync(draftPath, "utf-8"));
+      const { transporter } = getTransporter();
+      const mailOptions = {
+        from: draft.from,
+        to: draft.to.join(", "),
+        subject: draft.subject,
+        ...(draft.cc?.length && { cc: draft.cc.join(", ") }),
+        ...(draft.bcc?.length && { bcc: draft.bcc.join(", ") }),
+        ...(draft.body_type === "HTML" ? { html: draft.body } : { text: draft.body }),
+      };
+
+      const info = await transporter.sendMail(mailOptions);
+      fs.unlinkSync(draftPath);
 
       return {
         content: [
           {
             type: "text",
-            text: `✅ Draft sent successfully! The email has been sent and moved to Sent Items.`,
+            text: `✅ Draft sent successfully!\n\n📧 To: ${draft.to.join(", ")}\n📋 Subject: ${draft.subject}\n🆔 Message ID: ${info.messageId}`,
           },
         ],
       };
     } catch (error) {
       return {
-        content: [
-          {
-            type: "text",
-            text: `❌ Failed to send draft: ${error.message}\n\nTroubleshooting:\n• Ensure the draft ID is valid and hasn't already been sent\n• Re-authenticate if the token expired`,
-          },
-        ],
+        content: [{ type: "text", text: `❌ Failed to send draft: ${error.message}` }],
         isError: true,
       };
     }

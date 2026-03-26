@@ -3,6 +3,10 @@
     "workiq-email-sender": {
       "command": "node",
       "args": ["./plugins/workiq-email-sender/server/index.js"],
+      "env": {
+        "GMAIL_USER": "${GMAIL_USER}",
+        "GMAIL_APP_PASS": "${GMAIL_APP_PASS}"
+      },
       "tools": ["send_email", "create_draft", "send_draft"]
     }
   }

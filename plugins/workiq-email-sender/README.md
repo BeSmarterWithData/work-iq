@@ -1,6 +1,6 @@
 # WorkIQ Email Sender
 
-> Compose and send Outlook emails directly from GitHub Copilot CLI via Microsoft Graph API.
+> Compose and send emails via Gmail SMTP directly from GitHub Copilot CLI.
 
 ## What It Does
 
@@ -22,9 +22,16 @@ Fills the gap between read-only M365 queries (WorkIQ) and taking action — now 
 cd plugins/workiq-email-sender/server && npm install
 ```
 
-2. On first use, you'll be prompted to authenticate via device code flow in your browser.
+2. Enable **2-Step Verification** on your Google account if not already enabled.
 
-3. **Admin consent** may be required for `Mail.Send` and `Mail.ReadWrite` permissions. See the [Tenant Administrator Enablement Guide](../../ADMIN-INSTRUCTIONS.md).
+3. Generate a **Gmail App Password** at https://myaccount.google.com/apppasswords
+
+4. Set the required environment variables:
+
+```bash
+export GMAIL_USER="your-email@gmail.com"
+export GMAIL_APP_PASS="your-16-char-app-password"
+```
 
 ## Usage
 
@@ -52,16 +59,16 @@ cd plugins/workiq-email-sender/server && npm install
 
 | Tool | Description |
 |------|-------------|
-| `send_email` | Send an email immediately via Microsoft 365 |
-| `create_draft` | Save an email as draft in Outlook Drafts folder |
+| `send_email` | Send an email immediately via Gmail SMTP |
+| `create_draft` | Save an email draft locally as JSON |
 | `send_draft` | Send a previously created draft by ID |
 
-## Environment Variables (Optional)
+## Environment Variables (Required)
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `WORKIQ_EMAIL_CLIENT_ID` | Entra app registration Client ID | WorkIQ default app |
-| `WORKIQ_EMAIL_TENANT_ID` | Entra tenant ID | `common` |
+| Variable | Description |
+|----------|-------------|
+| `GMAIL_USER` | Your Gmail address (e.g. `user@gmail.com`) |
+| `GMAIL_APP_PASS` | Gmail App Password (from https://myaccount.google.com/apppasswords) |
 
 ## Platform Support
 
